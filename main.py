@@ -1,8 +1,12 @@
-import requests
+from flask import Flask
+import threading
 import time
+import requests
 
-ETSY_API_KEY = "5vmy5xamvjm33xy66epxht08"  # This is pending, full access may require OAuth later
-SHOP_NAME = "JPWoodsandPrints"  # Replace with your Etsy shop name
+app = Flask(__name__)
+
+ETSY_API_KEY = "5vmy5xamvjm33xy66epxht08"
+SHOP_NAME = "JPWoodsandPrints"  # Replace this if you didn't already
 SMIIRL_URL = "https://api.smiirl.com/40cb5aa8a1d491413edc730a1098ea65"
 
 def get_sales():
@@ -23,9 +27,20 @@ def update_counter(sales):
     else:
         print("Failed to update counter:", response.status_code, response.text)
 
-# Run every 10 minutes
-while True:
-    sales = get_sales()
-    if sales is not None:
-        update_counter(sales)
-    time.sleep(120)  # 600 seconds = 10 minutes
+def background_loop():
+    while True:
+        sales = get_sales()
+        if sales is not None:
+            update_counter(sales)
+        time.sleep(600)
+
+# Start background thread
+threading.Thread(target=background_loop, daemon=True).start()
+
+@app.route('/')
+def home():
+    return "Etsy-Smiirl Sync is running!"
+
+@app.route('/ping')
+def ping():
+    return "pong"
